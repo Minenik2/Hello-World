@@ -1,6 +1,4 @@
-echo "# Hello-World" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin https://github.com/Minenik2/Hello-World.git
-git push -u origin master
+Hi humans!
+
+I'm testing gethub and following a guide!
+I like anime and playing video-games. I've watched countless amount of animuuuuuuuu.
