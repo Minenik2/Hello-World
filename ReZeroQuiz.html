@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Anime Quiz</title>
+    <link rel="stylesheet" href="brukerinput.css">
+    <style>
+        body {
+            background-color: #e0e0e0;
+            font-family: "Century Gothic", Arial, sans-serif;
+            font-size: 14px;
+            color: #323232;
+        }
+
+        .innpakning {
+            width: 50%;
+            margin: auto;
+            padding: 5px;
+            background-color: #fefefe;
+            border: 3px solid black;
+        }
+
+        .resultat {
+            margin: 20px 5px;
+            padding: 20px;
+            font-size: 3.5ex;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="innpakning">
+        <h1>Anime Quiz</h1>
+        <p class="resultat"></p>
+    </div>
+
+    <script>
+        var innpakningEl = document.querySelector(".innpakning");
+
+        var resultatEl = document.querySelector(".resultat");
+
+        var quiz = [{
+        
+            sporsmaal: "Hvem er søsteren til Rem?",
+            alternativer: ["Ram", "Emilia (trash)", "Puck", "Ræm", "Rom"],
+            fasit: ["riktig", "galt", "galt", "galt", "galt"],
+        },{
+        
+            sporsmaal: "Subaru...",
+            alternativer: ["Elsker Emilia", "Synes at Emilia er trash", "Kan gå tilbake i tid", "Er useless", "Elsker Beatrice"],
+            fasit: ["riktig", "galt", "riktig", "galt", "galt"],
+        },{
+        
+            sporsmaal: "Beatrice...",
+            alternativer: ["Er en loli", "Ser ut som en loli", "Hater å være flat chested", "Forelsket i Puck", "Har sitt eget biblotek"],
+            fasit: ["galt", "riktig", "galt", "galt", "riktig"],
+        },{
+        
+            sporsmaal: "Emilia har en kontrakt med Puck",
+            alternativer: ["Ja", "Nei"],
+            fasit: ["riktig", "galt"],
+        },{
+        
+            sporsmaal: "Rem og Ram jobber for?",
+            alternativer: ["Emilia", "Priscilla", "Roswaal L.", "Subaru", "Anastasia"],
+            fasit: ["galt", "galt", "riktig", "galt", "galt"],
+        },{
+        
+            sporsmaal: "Felix...",
+            alternativer: ["Jobber sammen med Rem og Ram", "Er en loyal follower til Puck", "Tjener Crusch Karsten", "Har katteører", "Hater hunder"],
+            fasit: ["galt", "galt", "riktig", "riktig", "galt"],
+        },
+        
+       ];
+        
+        for (var i = 0; i < quiz.length; i++){
+            
+            var sporsmaalEl = document.createElement("p");
+            
+            sporsmaalEl.innerHTML += "<h3>" + quiz[i].sporsmaal + "<h3>";
+            
+            for(var j = 0; j < quiz[i].alternativer.length; j++){
+                var nyCheckbox = document.createElement("input");
+                nyCheckbox.type = "checkbox";
+                nyCheckbox.value = quiz[i].fasit[j];
+                sporsmaalEl.appendChild(nyCheckbox);
+                sporsmaalEl.innerHTML += quiz[i].alternativer[j] + "<br>";
+            }
+            innpakningEl.appendChild(sporsmaalEl);
+        }
+        
+        var knapp = document.createElement("button");
+        knapp.innerHTML = "Sjekk Svar";
+        knapp.addEventListener("click", finnPoeng);
+        innpakningEl.appendChild(knapp);
+        
+        function finnPoeng(){
+            
+            var alleCheckboxEl = document.querySelectorAll("input[type = 'checkbox']");
+            
+            var antallPoeng = 0;
+            
+            var maxpoeng = 0;
+            
+            for(var i = 0; i < alleCheckboxEl.length; i++){
+                if(alleCheckboxEl[i].checked){
+                    if(alleCheckboxEl[i].value === "riktig"){
+                        antallPoeng++;
+                    }else{
+                        antallPoeng--;
+                    }
+                    
+                }
+                
+                if (alleCheckboxEl[i].value === "riktig"){
+                    maxpoeng++;
+                }
+            }
+            
+            resultatEl.innerHTML = "Du fikk " + antallPoeng + " poeng av " + maxpoeng + " mulig poeng";
+        }
+    </script>
+</body></html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pong</title>
+    <style>
+        body {
+            background-color: #323232;
+        }
+        #mittCanvas {
+            background-color: black;
+            display: block;
+            margin: auto;
+        }
+        .flexbox {
+            display: flex;
+            justify-content: center;
+            justify-content: space-around;
+        }
+        .poeng {
+            color: white;
+        }
+        .header {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="info" class="poeng header">Pong</h1>
+  <div class="flexbox">
+    <h2 id="spiller1Poeng" class="poeng">Spiller1 Poeng: 0</h2>
+    <h2 id="spiller2Poeng" class="poeng">Spiller2 Poeng: 0</h2>
+  </div>
+   <canvas id="mittCanvas" width="600" height="400"></canvas>
+   <div class="flexbox">
+    <h1 id="start" class="poeng">Start</h1>
+    <h1 id="pause" class="poeng">Pause</h1>
+    <h1 id="restart" class="poeng">Restart</h1>
+  </div>
+   
+<script>
+    // funksjonen spill() kjører selve spillet,
+    // og gjentas i det uendelige
+    function spill() {
+        // tømmer alt innhold på canvas-elementet
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // lager bannen der ballen ikke skal gå utafor
+        ctx.beginPath();
+        ctx.rect(0,0,70,400);
+        ctx.fillStyle = "#362121";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(canvas.width - 70,0,70,400);
+        ctx.fillStyle = "#362121";
+        ctx.fill();
+        
+        // Flytter og tegner opp de to spillerne
+        spiller1.flytt();
+        spiller1.tegn();
+        spiller2.flytt();
+        spiller2.tegn();
+        
+        // flytter og tegner opp ballen
+        if (sp1Poeng >= maxPoeng || sp2Poeng >= maxPoeng) {
+            if (sp1Poeng >= maxPoeng || sp2Poeng >= maxPoeng) {
+                if (sp1Poeng >= maxPoeng) {
+                    getInfo.innerHTML = "Spiller1 VANT!!!";
+                } else if (sp2Poeng >= maxPoeng) {
+                    getInfo.innerHTML = "Spiller2 VANT!!!";
+                }
+            }
+        } else {
+            ball.touch(powerupBall, powerupBall2);
+            ball.flytt(spiller1, spiller2);
+            ball.tegn();
+            
+            if (Fakeball.farge != "blue") {
+                Fakeball.fakeBall();
+                Fakeball.tegn();
+            }
+        }
+        
+        // tegner powerup
+        powerupBall.tegn();
+        if (powerupBall.navn === "teleport") {
+            powerupBall2.tegn();
+        }
+        
+        // gjental funksjonen spill hvis det ikke er pause
+        if (pause === false) {
+            if (getInfo.innerHTML === "Pause") {
+                getInfo.innerHTML = "Pong";
+            }
+            // Gjentar funksjonen spill()
+            requestAnimationFrame(spill);
+        } else {getInfo.innerHTML = "Pause";}
+    }
+    
+    // setter i gang funksjonen spill() første gang
+    requestAnimationFrame(spill);
+    
+    "use stirct"
+    
+    // henter canvas-elementet
+    var canvas = document.querySelector("#mittCanvas");
+    var ctx = canvas.getContext("2d");
+    // henter #spiller1poeng og #spiller2poeng, sp1 er spiller1 og sp2 er spiller2
+    var getsp1Poeng = document.querySelector("#spiller1Poeng");
+    var getsp2Poeng = document.querySelector("#spiller2Poeng");
+    
+    // knappene som er neders i html
+    var getStart = document.querySelector("#start");
+    var getPause = document.querySelector("#pause");
+    var getRestart = document.querySelector("#restart");
+    
+    // Header tag på toppen, skal gi info til spillere
+    var getInfo = document.querySelector("#info");
+    
+    // lager en tom array som skal holde på tastene som trykkes ned
+    var taster = [];
+    // lager poeng variabel for å innholde poeng
+    var sp1Poeng = 0;
+    var sp2Poeng = 0;
+    // max poeng en spiller kan ha
+    var maxPoeng = 99999;
+    // pause knapp
+    var pause = false;
+    // her storer vi timeouts fra powerups slik at vi kan slette dem hvis spillet restartes
+    var timeouts = [];
+    // velger et random tall fra 1 til 2 som vurderer hvilken powerup kommer opp
+    var randomNumberPowerup = 2 /*Math.floor(Math.random() * 2 + 1)*/;
+    // spillerenes speed
+    var playerMovementSpeed = 4;
+    // utvider spillerens muligheter å gå når de er småe
+    var playerMaxPosition = 300;
+    
+    // lytter etter keydown- og keyup-hendelser
+    window.addEventListener("keydown", knappnedopp);
+    window.addEventListener("keyup", knappnedopp);
+    
+    // lytter etter knapper
+    getStart.addEventListener("click", startSpill);
+    getPause.addEventListener("click", pauseSpill);
+    getRestart.addEventListener("click", restartSpill);
+    
+    // Når en knapp holdes nede,
+    // registreres den som true i arrayen taster,
+    // tisvarende slettes den (settes til false)
+    // når den ikke lenger holdes nede
+    function knappnedopp(e) {
+        if (e.type === "keydown") {
+            taster[e.keyCode] = true;
+        } else if (e.type === "keyup") {
+            delete taster[e.keyCode];
+        }
+        if (e.keyCode === 80 && e.type === "keydown" && pause === false || e.keyCode === 27 && e.type === "keydown" && pause === false) {
+            pause = true;
+        } else if (e.keyCode === 80 && e.type === "keydown" && pause === true || e.keyCode === 27 && e.type === "keydown" && pause === true) {
+            pause = false;
+            requestAnimationFrame(spill);
+        }
+        if (e.keyCode === 82 && e.type === "keydown") {
+            restartSpill();
+        }
+    }
+    
+    // lager en klasse for spillerne
+    class Spiller {
+        constructor(x, y, bredde, hoyde, fart, opptast, nedtast, farge) {
+            // Spillerens egenskaper
+            this.x = x;
+            this.y = y;
+            this.bredde = bredde;
+            this.hoyde = hoyde;
+            this.fart = fart;
+            this.opptast = opptast;
+            this.nedtast = nedtast;
+            this.farge = farge;
+        }
+        
+        // metoden tegn() tegner opp spilleren
+        tegn() {
+            ctx.fillStyle = this.farge;
+            ctx.fillRect(this.x, this.y, this.bredde, this.hoyde);
+        }
+        
+        // Metoden flytt() flytter spilleren
+        flytt() {
+            this.y += this.fart;
+            
+            
+            if (taster[this.opptast]) {
+                if (this.y <= 0){
+                    this.fart = 0;
+                } else {
+                    this.y -= playerMovementSpeed;
+                    this.fart = -playerMovementSpeed;
+                }
+            } else if (taster[this.nedtast]) {
+                if (this.y >= playerMaxPosition){
+                    this.fart = 0;
+                } else {
+                    this.y += playerMovementSpeed;
+                    this.fart = playerMovementSpeed;
+                }
+            } else {
+                this.fart = 0;
+            }
+        }
+    }
+    
+    // lager de to spillerne
+    var spiller1 = new Spiller(50, 140, 20, 100, 0, 87, 83, "white");
+    var spiller2 = new Spiller(530, 120, 20, 100, 0, 38, 40, "white");
+    
+    // Lager en klasse for ballen
+    class Ball {
+        constructor(x, y, radius, xFart, yFart, farge) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.xFart = xFart;
+            this.yFart = yFart;
+            this.farge = farge;
+        }
+        
+        // Metoden tegn() tegner ballen
+        tegn() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 2 * Math.PI, false);
+            ctx.fillStyle = this.farge;
+            ctx.fill();
+        }
+        
+        // Metoden flytt() flytter ballen
+        // Argumentene sp1 og sp2 er de to spillerobjektene
+        flytt(sp1, sp2) {
+            this.x += this.xFart;
+            this.y += this.yFart;
+            
+            var topp = this.y - 10;
+            var bunn = this.y + 10;
+            var venstre = this.x - 10;
+            var hoyre = this.x + 10;
+            
+            // treffer topp- eller bunnvegg
+            if(topp < 0 || bunn > canvas.height) {
+                this.yFart = -this.yFart;
+            }
+            // treffer spiller 1
+            if(venstre < sp1.x + sp1.bredde && topp < sp1.y + sp1.hoyde && bunn > sp1.y) {
+                if (Math.sign(this.xFart) === -1) {
+                    this.xFart = -this.xFart;
+                }
+                
+                // hvis sp1 ikke står still
+                if (sp1.fart !== 0) {
+                    this.yFart = sp1.fart;
+                }
+            }
+            // treffer spiller 2
+            if (hoyre > sp2.x && topp < sp2.y + sp2.hoyde && bunn > sp2.y) {
+                if (Math.sign(this.xFart) === 1) {
+                    this.xFart = -this.xFart;
+                }
+                
+                // hvis sp2 ikke står stille
+                if (sp2.fart !== 0) {
+                    this.yFart = sp2.fart;
+                }
+            }
+            // Forlater "banen"
+            if(this.x < 70) {
+                // skifter fargen tilbake
+                this.farge = "white";
+                
+                sp2Poeng += 1;
+                getsp2Poeng.innerHTML = "Spiller2 Poeng: " + sp2Poeng;
+                
+                setup();
+            } else if (this.x > canvas.width - 70) {
+                sp1Poeng += 1;
+                getsp1Poeng.innerHTML = "Spiller1 Poeng: " + sp1Poeng;
+                
+                setup();
+            }
+        }
+        
+        // hvis ballen rører en powerup
+        touch(pw,pw2) {
+            var topp = this.y - 10;
+            var bunn = this.y + 10;
+            var venstre = this.x - 10;
+            var hoyre = this.x + 10;
+            
+            if(venstre < pw.x + pw.bredde && topp < pw.y + pw.hoyde && bunn > pw.y && hoyre > pw.x && topp < pw.y + pw.hoyde && bunn > pw.y && powerupBall.farge != "rgba(255, 255, 255, 0)" && powerupBall.farge != "grey") {
+                if (powerupBall.navn === "speed") {
+                    this.xFart += this.xFart;
+                    this.farge = "yellow";
+                } else if (powerupBall.navn === "teleport") {
+                    powerupBall2.farge = "rgba(255, 255, 255, 0)"; // gjør den usynlig før teleport slik at den ikke gjentar seg
+                    this.x = powerupBall2.x;
+                    this.y = powerupBall2.y;
+                    
+                    console.log("teleporter1: TELEPORTED!");
+                } else if (powerupBall.navn === "freeze") {
+                    playerMovementSpeed = 2;
+                    spiller1.farge = "blue";
+                    spiller2.farge = "blue";
+                    
+                    timeouts.push(setTimeout(function(){
+                        spiller1.farge = "white";
+                        playerMovementSpeed = 4;
+                    },5000));
+                    timeouts.push(setTimeout(function(){
+                        spiller2.farge = "white";
+                    },5000));
+                } else if (powerupBall.navn === "bigBall") {
+                    this.radius = 100;
+                    
+                    timeouts.push(setTimeout(function(){
+                        ball.radius = 10;
+                        console.log("small");
+                    },5000));
+                } else if (powerupBall.navn === "smallPlayers") {
+                    spiller1.hoyde = 30;
+                    spiller2.hoyde = 30;
+                    
+                    playerMaxPosition = 370;
+                    
+                    timeouts.push(setTimeout(function(){
+                        spiller1.hoyde = 100;
+                        spiller2.hoyde = 100;
+                        playerMaxPosition = 300;
+                    },5000));
+                } else if (powerupBall.navn === "fake") {
+                    Fakeball.farge = "white";
+                    
+                    timeouts.push(setTimeout(function(){
+                        Fakeball.farge = "blue";
+                    },5000));
+                }
+                
+                powerupBall.farge = "rgba(255, 255, 255, 0)";
+                
+                makePowerup();
+                
+            } else if (venstre < pw2.x + pw2.bredde && topp < pw2.y + pw2.hoyde && bunn > pw2.y && hoyre > pw2.x && topp < pw2.y + pw2.hoyde && bunn > pw2.y && powerupBall.farge != "rgba(255, 255, 255, 0)" && powerupBall.farge != "grey" && powerupBall.navn === "teleport") {
+                powerupBall.farge = "rgba(255, 255, 255, 0)"; // gjør den usynlig før teleport slik at den ikke gjentar seg
+                this.x = powerupBall.x;
+                this.y = powerupBall.y;
+                
+                console.log("teleporter2: TELEPORTED!");
+                
+                makePowerup();
+            }
+        }
+        
+        fakeBall() {
+            this.x += this.xFart;
+            this.y += this.yFart;
+            
+            var topp = this.y - 10;
+            var bunn = this.y + 10;
+            var venstre = this.x - 10;
+            var hoyre = this.x + 10;
+            
+            if(topp < 0 || bunn > canvas.height) {
+                this.yFart = -this.yFart;
+            }
+            if(this.x < 80 || this.x > canvas.width - 80) {
+                this.xFart = -this.xFart;
+            }
+        }
+    }
+    
+    // lager ballen
+    var ball = new Ball(300, 200, 10, 5, 0, "white");
+    // lager fake baller for powerup
+    var Fakeball = new Ball(300, 200, 10, 5, 5, "blue");
+    
+    // lager powerups
+    class Powerup {
+        constructor(x, y, bredde, hoyde, farge, navn) {
+            // powerup egenskaper
+            this.x = x;
+            this.y = y;
+            this.bredde = bredde;
+            this.hoyde = hoyde;
+            this.farge = farge;
+            this.navn = navn;
+        }
+        
+        tegn() {
+            ctx.fillStyle = this.farge;
+            ctx.fillRect(this.x, this.y, this.bredde, this.hoyde);
+        }
+    }
+    
+    // spawner en powerup et random sted på kartet
+    var powerupBall = new Powerup(Math.floor(Math.random() * (canvas.width - 400) + 200),Math.floor(Math.random() * (canvas.height - 60) + 20),30,30,"rgba(255, 255, 255, 0)", "teleport");
+    var powerupBall2 = new Powerup(canvas.width - powerupBall.x,canvas.height - powerupBall.y,30,30,"rgba(255, 255, 255, 0)", "teleport");
+    
+    makePowerup();
+    
+    
+    function makePowerup() {
+        // lager en ny random powerup spawn og gjør den synlig om 5-10 sek
+        powerupBall.x = Math.floor(Math.random() * (canvas.width - 400) + 200);
+        powerupBall.y = Math.floor(Math.random() * (canvas.height - 60) + 20);
+        
+        randomNumberPowerup = Math.floor(Math.random() * 6 + 1);
+        
+        // velger random powerup for å spawne på kartet
+        if (randomNumberPowerup === 1) {
+            powerupBall.navn = "speed";
+        } else if (randomNumberPowerup === 2) {
+            powerupBall.navn = "teleport";
+        } else if (randomNumberPowerup === 3) {
+            powerupBall.navn = "freeze";
+        } else if (randomNumberPowerup === 4) {
+            powerupBall.navn = "bigBall";
+        } else if (randomNumberPowerup === 5) {
+            powerupBall.navn = "smallPlayers";
+        } else if (randomNumberPowerup === 6) {
+            powerupBall.navn = "fake";
+        }
+        
+        var timedelayPw = Math.floor(Math.random() * 5000 + 5000);
+        console.log("Next powerup spawning in " + timedelayPw + " miliseconds");
+        timeouts.push(setTimeout(function(){
+            powerupBall.farge = "grey";
+        },timedelayPw - 1000));
+        timeouts.push(setTimeout(function(){
+            if(randomNumberPowerup === 1) {
+                powerupBall.farge = "yellow";
+            } else if (randomNumberPowerup === 2) {
+                powerupBall.farge = "purple";
+            } else if (randomNumberPowerup === 3) {
+                powerupBall.farge = "blue";
+            } else if (randomNumberPowerup === 4) {
+                powerupBall.farge = "burlywood";
+            } else if (randomNumberPowerup === 5) {
+                powerupBall.farge = "green";
+            } else if (randomNumberPowerup === 6) {
+                powerupBall.farge = "white";
+            }
+        },timedelayPw));
+        
+        // lager en if setning hvis det blir en teleport powerup på nytt
+        if (powerupBall.navn === "teleport") {
+            powerupBall2.x = canvas.width - powerupBall.x;
+            powerupBall2.y = canvas.height - powerupBall.y;
+            // gjør den synlig etter 9 sec men ikke interaktivt slik at spillere har tid til å vite hvor den kommer til å befinne seg
+            timeouts.push(setTimeout(function(){
+                powerupBall2.farge = "grey";
+            },timedelayPw - 1000));
+            // gjør den synlig etter 10 sec
+            timeouts.push(setTimeout(function(){
+                powerupBall2.farge = "purple";
+            },timedelayPw));
+
+            console.log("powerupball2 (Teleporter): " + powerupBall2.x + " x " + powerupBall2.y + " y");
+        }
+    }
+    
+    // startSpill knapp
+    function startSpill() {
+        if (pause === false) {
+            alert("spillet er allerede startet!");
+        } else {
+            pause = false;
+            requestAnimationFrame(spill);
+        }
+    }
+    // pause knapp
+    function pauseSpill() {
+        pause = true;
+    }
+    // Restarte Knapp
+    function restartSpill() {
+        if (pause === true) {
+            pause = false;
+            requestAnimationFrame(spill);
+        }
+        sp1Poeng = 0;
+        sp2Poeng = 0;
+        getsp1Poeng.innerHTML = "Spiller1 Poeng: 0";
+        getsp2Poeng.innerHTML = "Spiller2 Poeng: 0";
+        
+        setup();
+    }
+    
+    // gjør det enklere slik at koden ikke blir skrevet mer ganger på rad, dette dukker opp hvær gang ballen går utafor banen og ved et spill restart
+    function setup() {
+        // skifter fargen tilbake
+        ball.farge = "white";
+        powerupBall.farge = "rgba(255, 255, 255, 0)";
+        powerupBall2.farge = "rgba(255, 255, 255, 0)";
+        
+        // nullstiller posisjon
+        ball.xFart = 0;
+        ball.yFart = 0;
+        ball.x = 300;
+        ball.y = 200;
+        // nullstiller powerups
+        playerMovementSpeed = 4;
+        spiller1.farge = "white";
+        spiller2.farge = "white";
+        ball.radius = 10;
+        spiller1.hoyde = 100;
+        spiller2.hoyde = 100;
+        playerMaxPosition = 300;
+        Fakeball.farge = "blue";
+        
+        // gir spillere tid til å reagere
+        getInfo.innerHTML = "3";
+        setTimeout(function(){getInfo.innerHTML = "2";}, 1000);
+        setTimeout(function(){getInfo.innerHTML = "1";}, 2000);
+        setTimeout(function(){getInfo.innerHTML = "Start!";if (sp1Poeng > sp1Poeng){ball.xFart = 5;} else {ball.xFart = -5}}, 3000);
+        
+        // clearer den neste powerupen
+        for (var i=0; i < timeouts.length; i++) {
+          clearTimeout(timeouts[i]);
+        }
+        
+        makePowerup(); // lager den neste powerupen
+    }
+    /*POWERUP ideas: Fake baller, wormhole, freeze/timestop, small ball/player, big ball/player, + poeng for begge*/
+</script>
+    
+</body>
+</html>
