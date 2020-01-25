@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: black;
+            font-family: "Century Gothic", Arial, sans-serif;
+            font-size: 14px;
+            color: white;
+        }
+        img:hover {
+            cursor: pointer;
+        }
+        #reset {
+            font-size: 30px;
+        }
+        #reset:hover {
+            cursor: pointer;
+            color: aqua;
+        }
+        .margin {
+            margin-top: 0px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Monty Hall</h1>
+    <p>Hvilken dør vil du velge?</p>
+    <img id="r" src="rod.png" width="227" height="324" alt="rød dør">
+    <img id="g" src="gronn.png" width="227" height="324" alt="grønn dør">
+    <img id="b" src="blaa.png" width="227" height="324" alt="blå dør">
+    <p class="margin"></p>
+    <a id="reset">Reset</a>
+    <p class="margin"></p>
+    <a>Poeng: </a><a id="poeng">0</a>
+    <p id="melding"></p>
+    <script>
+        var rodDorEl = document.querySelector("#r");
+        var gronnDorEl = document.querySelector("#g");
+        var blaaDorEl = document.querySelector("#b");
+        var meldingEl = document.querySelector("#melding");
+        var resetEl = document.querySelector("#reset");
+        var poengEl = document.querySelector("#poeng");
+        
+        rodDorEl.addEventListener("click", sjekkDor);
+        gronnDorEl.addEventListener("click", sjekkDor);
+        blaaDorEl.addEventListener("click", sjekkDor);
+        resetEl.addEventListener("click", resetDor);
+        
+        
+        var tilfeldig = Math.floor(Math.random() * 3 + 1);
+            var riktigDor = "";
+            if(tilfeldig == 1){
+                riktigDor = "r";
+            } else if (tilfeldig == 2){
+                riktigDor = "g";
+            } else {
+                riktigDor = "b";
+            }
+        var jegTrakk = false;
+        var lock = false;
+        var poengo = 0;
+        
+        resetDor();
+        
+        function resetDor(){
+            rodDorEl.addEventListener("click", sjekkDor);
+            gronnDorEl.addEventListener("click", sjekkDor);
+            blaaDorEl.addEventListener("click", sjekkDor);
+            
+            tilfeldig = Math.floor(Math.random() * 3 + 1);
+            riktigDor = "";
+            if(tilfeldig == 1){
+                riktigDor = "r";
+            } else if (tilfeldig == 2){
+                riktigDor = "g";
+            } else {
+                riktigDor = "b";
+            }
+            rodDorEl.src = "rod.png";
+            gronnDorEl.src = "gronn.png"
+            blaaDorEl.src = "blaa.png";
+            jegTrakk = false;
+            lock = false;
+            meldingEl.innerHTML = "";
+        }
+        
+        function sjekkDor(e){
+            var trykketDor = e.target;
+            
+            if (trykketDor.id === riktigDor && jegTrakk == true && lock == false) {
+                trykketDor.src = "bil.png";
+                meldingEl.innerHTML = "Du trykket på den riktige døren! <br> Du kan ikke åpne mer dører, klikk på reset knappen";
+                poengo++;
+                poengEl.innerHTML = poengo;
+                lock = true;
+                
+             } else if (trykketDor.id != riktigDor && jegTrakk == true && lock == false){
+                trykketDor.src = "geit.png";
+                meldingEl.innerHTML = "Du trykket på en geit :c <br> Du kan ikke åpne mer dører, klikk på reset knappen";
+                lock = true;
+             }
+            if (trykketDor.id === "r" && jegTrakk == false) {
+                jegTrakk = true;
+             if (riktigDor === "b") {
+                gronnDorEl.src = "geit.png";
+                gronnDorEl.removeEventListener("click", sjekkDor);
+             } else if (riktigDor === "g") {
+                blaaDorEl.src = "geit.png";
+                blaaDorEl.removeEventListener("click", sjekkDor);
+            } else {
+            jegTrakk = true;
+                gronnDorEl.src = "geit.png";
+                gronnDorEl.removeEventListener("click", sjekkDor);
+            }
+            }
+            if (trykketDor.id === "b" && jegTrakk == false) {
+                jegTrakk = true;
+             if (riktigDor === "r") {
+                gronnDorEl.src = "geit.png";
+                gronnDorEl.removeEventListener("click", sjekkDor);
+             } else if (riktigDor === "g") {
+                rodDorEl.src = "geit.png";
+                rodDorEl.removeEventListener("click", sjekkDor);
+            } else {
+                gronnDorEl.src = "geit.png";
+                gronnDorEl.removeEventListener("click", sjekkDor);
+            }
+            }
+            if (trykketDor.id === "g" && jegTrakk == false) {
+                jegTrakk = true;
+             if (riktigDor === "r") {
+                blaaDorEl.src = "geit.png";
+                blaaDorEl.removeEventListener("click", sjekkDor);
+             } else if (riktigDor === "b") {
+                rodDorEl.src = "geit.png";
+                rodDorEl.removeEventListener("click", sjekkDor);
+            } else {
+                blaaDorEl.src = "geit.png";
+                blaaDorEl.removeEventListener("click", sjekkDor);
+            }
+            }
+        }
+        
+
+    </script>
+</body>
+</html>
